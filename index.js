@@ -9,8 +9,6 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// libraryManagement
-// CthNpD5cqb4ZqCDq
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.byauspy.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -29,27 +27,34 @@ async function run() {
         await client.connect();
 
         const booksCollection = client.db('bookDB').collection('books');
+        const borrowCollection = client.db('bookDB').collection('borrow');
 
-
-        app.get('/books', async(req, res) => {
+        // get all books
+        app.get('/books', async (req, res) => {
             const cursor = booksCollection.find();
             const result = await cursor.toArray()
             res.send(result)
         })
-
-        app.post('/books', async(req, res) => {
+        // post all books
+        app.post('/books', async (req, res) => {
             const newBook = req.body;
             const result = await booksCollection.insertOne(newBook);
             res.send(result)
         });
         // get a single bookDetails
-        app.get('/books/:id', async(req, res) => {
+        app.get('/books/:id', async (req, res) => {
             const id = req.params.id;
-            const query = { _id: new ObjectId(id)};
+            const query = { _id: new ObjectId(id) };
             const result = await booksCollection.findOne(query);
             res.send(result)
         })
 
+        // post to borrow list
+        app.post('/borrow', async(req, res) => {
+            const borrowData = req.body;
+            const result = await borrowCollection.insertOne(borrowData);
+            res.send(result);
+        })
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
