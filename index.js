@@ -41,6 +41,24 @@ async function run() {
             const result = await booksCollection.insertOne(newBook);
             res.send(result)
         });
+        // Update
+        app.put('/books/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const options = { upsert: true };
+            const updatedBook = req.body;
+            const spot = {
+                $set: {
+                    book_name: updatedBook.book_name,
+                    rating: updatedBook.rating,
+                    photo: updatedBook.photo,
+                    author_name: updatedBook.author_name,
+                    category: updatedBook.category
+                }
+            };
+            const result = await booksCollection.updateOne(filter, spot, options);
+            res.send(result)
+        });
         // get a single bookDetails
         app.get('/books/:id', async (req, res) => {
             const id = req.params.id;
@@ -55,7 +73,7 @@ async function run() {
             // Check if the user has already borrowed the same book
             const existingBorrow = await borrowCollection.findOne({
                 email: borrowData.email,
-                book_name: borrowData.book_name 
+                book_name: borrowData.book_name
             });
 
             if (existingBorrow) {
