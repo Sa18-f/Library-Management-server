@@ -50,10 +50,40 @@ async function run() {
         })
 
         // post to borrow list
-        app.post('/borrow', async(req, res) => {
+        app.post('/borrow', async (req, res) => {
             const borrowData = req.body;
+            // Check if the user has already borrowed the same book
+            const existingBorrow = await borrowCollection.findOne({
+                email: borrowData.email,
+                book_name: borrowData.book_name 
+            });
+
+            if (existingBorrow) {
+                // If a borrow entry already exists for the same user and book, return an error
+                return res.status(400).send({ error: 'User has already borrowed this book.' });
+            }
             const result = await borrowCollection.insertOne(borrowData);
             res.send(result);
+        })
+
+        // delete from borrow list page
+        app.delete('/borrow/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await borrowCollection.deleteOne(query);
+            res.json(result);
+        });
+
+        // borrow list page
+        app.get('/borrow/:email', async (req, res) => {
+            const result = await borrowCollection.find({ email: req.params.email }).toArray();
+            res.send(result)
+        })
+
+        app.get('/borrow', async (req, res) => {
+            const cursor = borrowCollection.find();
+            const result = await cursor.toArray()
+            res.send(result)
         })
 
         // Send a ping to confirm a successful connection
