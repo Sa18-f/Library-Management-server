@@ -70,26 +70,37 @@ async function run() {
         // post to borrow list
         app.post('/borrow', async (req, res) => {
             const borrowData = req.body;
-            // Check if the user has already borrowed the same book
             const existingBorrow = await borrowCollection.findOne({
                 email: borrowData.email,
                 book_name: borrowData.book_name
             });
 
             if (existingBorrow) {
-                // If a borrow entry already exists for the same user and book, return an error
                 return res.status(400).send({ error: 'User has already borrowed this book.' });
             }
             const result = await borrowCollection.insertOne(borrowData);
+            // update quantity
+            const updateDoc = {
+                $inc: {quantity: -1},
+            }
+            const quantityQuery = { _id: new ObjectId(borrowData._id) };
+            const updateQuantityCount = await booksCollection.updateOne(quantityQuery, updateDoc);
             res.send(result);
         })
 
         // delete from borrow list page
         app.delete('/borrow/:id', async (req, res) => {
+            const borrowData = req.body;
             const id = req.params.id;
-            const query = { _id: new ObjectId(id) };
+            const query = { _id: id };
             const result = await borrowCollection.deleteOne(query);
-            res.json(result);
+            // decrease 
+            const updateDoc = {
+                $inc: {quantity: 1},
+            }
+            const quantityQuery = { _id: new ObjectId(borrowData._id) };
+            const updateQuantityCount = await booksCollection.updateOne(quantityQuery, updateDoc);
+            res.send(result);
         });
 
         // borrow list page
