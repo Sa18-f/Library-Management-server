@@ -9,7 +9,6 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.byauspy.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -41,8 +40,14 @@ async function run() {
             const result = await booksCollection.insertOne(newBook);
             res.send(result)
         });
+
+        app.get('/allBooks/:category', async (req, res) => {
+            const cursor = booksCollection.find({category: req.params.category});
+            const result = await cursor.toArray();
+            res.send(result)
+        })
         // Update
-        app.put('/books/:id', async (req, res) => {
+        app.put('/books/:id',  async (req, res) => {
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) };
             const options = { upsert: true };
@@ -72,7 +77,7 @@ async function run() {
             const borrowData = req.body;
             const existingBorrow = await borrowCollection.findOne({
                 email: borrowData.email,
-                book_name: borrowData.book_name
+                book_id: borrowData.book_name
             });
 
             if (existingBorrow) {
@@ -90,16 +95,9 @@ async function run() {
 
         // delete from borrow list page
         app.delete('/borrow/:id', async (req, res) => {
-            const borrowData = req.body;
             const id = req.params.id;
             const query = { _id: id };
             const result = await borrowCollection.deleteOne(query);
-            // decrease 
-            const updateDoc = {
-                $inc: {quantity: 1},
-            }
-            const quantityQuery = { _id: new ObjectId(borrowData._id) };
-            const updateQuantityCount = await booksCollection.updateOne(quantityQuery, updateDoc);
             res.send(result);
         });
 
